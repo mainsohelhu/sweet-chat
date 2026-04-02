@@ -43,7 +43,10 @@ mongoose
   .catch((err) => { console.error('❌ MongoDB error:', err); process.exit(1); });
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet({ 
+  contentSecurityPolicy: false, 
+  crossOriginResourcePolicy: { policy: 'cross-origin' } 
+}));
 app.use(compression());
 app.use(morgan('dev'));
 
@@ -76,12 +79,7 @@ app.get('/api/health', (req, res) => {
 // ─── Socket Handlers ──────────────────────────────────────────────────────────
 initSocketHandlers(io);
 
-// ─── Error Handler ────────────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.statusCode || 500).json({ success: false, message: err.message || 'Server error' });
-});
-
+// ─── API Fallback ─────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   if (req.originalUrl.startsWith('/api')) {
     res.status(404).json({ success: false, message: 'Route not found' });
@@ -92,11 +90,19 @@ app.use((req, res, next) => {
 
 // ─── Production Frontend Serving ──────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  const buildPath = path.resolve(__dirname, '../frontend/build');
+  app.use(express.static(buildPath));
+  
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html'));
+    res.sendFile(path.join(buildPath, 'index.html'));
   });
 }
+
+// ─── Error Handler (MUST BE LAST) ─────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Server Error:', err.stack || err);
+  res.status(err.statusCode || 500).json({ success: false, message: err.message || 'Server error', stack: err.stack });
+});
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
