@@ -1,0 +1,279 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand:        #4f46e5;
+    --brand-light:  #6366f1;
+    --brand-subtle: rgba(79, 70, 229, 0.1);
+
+    --bg:           #1e1b4b;
+    --surface:      rgba(255, 255, 255, 0.08);
+    --surface-2:    rgba(255, 255, 255, 0.12);
+    --surface-3:    rgba(255, 255, 255, 0.18);
+
+    --text:         #f8fafc;
+    --text-muted:   #94a3b8;
+    --text-subtle:  #64748b;
+
+    --border:       rgba(255, 255, 255, 0.15);
+    --border-strong:rgba(255, 255, 255, 0.25);
+
+    /* Glass bubble effect — outgoing */
+    --bubble-out-bg:       linear-gradient(135deg, rgba(79, 70, 229, 0.7) 0%, rgba(124, 58, 237, 0.6) 100%);
+    --bubble-out-border:   rgba(255, 255, 255, 0.2);
+    --bubble-out-text:     #ffffff;
+
+    /* Glass bubble — incoming */
+    --bubble-in-bg:        rgba(255, 255, 255, 0.06);
+    --bubble-in-border:    rgba(255, 255, 255, 0.1);
+    --bubble-in-text:      #ffffff;
+
+    --scrollbar:    rgba(255, 255, 255, 0.1);
+    --shadow-sm:    0 4px 12px rgba(0,0,0,0.2);
+    --shadow-md:    0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .dark {
+    --bg:           #0f172a;
+    --surface:      rgba(30, 41, 59, 0.5);
+    --surface-2:    rgba(51, 65, 85, 0.5);
+    --surface-3:    rgba(71, 85, 105, 0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Animated mesh gradient background */
+    background: linear-gradient(-45deg, #1e1b4b, #312e81, #1e293b, #0f172a);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+  }
+
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  #root {
+    height: 100%;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px; }
+}
+
+@layer components {
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center
+           font-semibold text-sm
+           px-5 py-2.5 rounded-xl
+           transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed
+           select-none;
+    background: var(--text);
+    color: var(--bg);
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center
+           font-medium text-sm
+           px-4 py-2 rounded-xl
+           transition-all duration-150
+           select-none;
+    color: var(--text-muted);
+    background: transparent;
+  }
+  .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+
+  .input-field {
+    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-150;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .input-field::placeholder { color: var(--text-subtle); }
+  .input-field:focus {
+    border-color: var(--text-muted);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+  }
+  .dark .input-field:focus {
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+  }
+
+  /* ── Glass bubble — outgoing ── */
+  .bubble-out {
+    position: relative;
+    padding: 10px 14px;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 85vw;
+    word-break: normal;
+    overflow-wrap: break-word;
+    min-width: 120px;
+    background: var(--bubble-out-bg);
+    border: 1px solid var(--bubble-out-border);
+    color: var(--bubble-out-text);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.15),
+      inset 0 -1px 0 rgba(0,0,0,0.1),
+      0 2px 12px rgba(0,0,0,0.12);
+  }
+  .bubble-out::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ── Glass bubble — incoming ── */
+  .bubble-in {
+    position: relative;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 4px;
+    max-width: 85vw;
+    word-break: normal;
+    overflow-wrap: break-word;
+    min-width: 120px;
+    background: var(--bubble-in-bg);
+    border: 1px solid var(--bubble-in-border);
+    color: var(--bubble-in-text);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.5),
+      inset 0 -1px 0 rgba(0,0,0,0.04),
+      0 2px 8px rgba(0,0,0,0.06);
+  }
+  .bubble-in::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .glass {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .dark .glass {
+    background: rgba(15, 23, 42, 0.75);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .nav-icon {
+    @apply w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-150;
+    color: var(--text-muted);
+  }
+  .nav-icon:hover { background: var(--surface-2); color: var(--text); }
+  .nav-icon.active { background: var(--text); color: var(--bg); }
+
+  .online-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+    background: #22c55e;
+    border: 2px solid var(--surface);
+  }
+
+  .badge {
+    @apply min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full flex items-center justify-center;
+    background: var(--text);
+    color: var(--bg);
+  }
+}
+
+/* Message enter animation */
+.message-enter {
+  animation: msgEnter 0.4s cubic-bezier(0.17, 0.84, 0.44, 1) forwards;
+}
+@keyframes msgEnter {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Typing dots */
+.typing-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: typing 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Chat background */
+.chat-bg {
+  background: transparent;
+}
+.dark .chat-bg {
+  background: transparent;
+}
+
+/* Call overlay */
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Smooth transitions — selective */
+button, a, input, textarea, select {
+  transition-property: background-color, border-color, color, opacity, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}

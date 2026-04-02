@@ -1,0 +1,9 @@
+{
+  "short_name": "Sweetchat",
+  "name": "Sweetchat - Real-Time Messaging",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#7c3aed",
+  "background_color": "#f8f7ff"
+}
