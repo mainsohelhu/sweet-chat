@@ -10,6 +10,13 @@ import api from '../../utils/api';
 import useAuthStore from '../../store/authStore';
 import CallScreen from './CallScreen';
 
+const rtcConfig = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' }
+  ]
+};
+
 export default function CallManager({ socketRef }) {
   const user = useAuthStore((s) => s.user);
   const [activeCall, setActiveCall] = useState(null);
@@ -48,13 +55,13 @@ export default function CallManager({ socketRef }) {
       try {
         const stream = await getMedia(callType);
         localStreamRef.current = stream;
-        const peer = new SimplePeer({ initiator: true, trickle: true, stream });
+        const peer = new SimplePeer({ initiator: true, trickle: true, stream, config: rtcConfig });
         peerRef.current = peer;
         const callId = `${user._id}-${Date.now()}`;
         peer.on('signal', (data) => {
           if (data.type === 'offer') {
             socketRef.current?.emit('call_initiate', { targetUserId: targetUser._id, callType, offer: data, chatId });
-          } else if (data.candidate) {
+          } else {
             socketRef.current?.emit('ice_candidate', { targetUserId: targetUser._id, candidate: data, callId });
           }
         });
@@ -81,12 +88,12 @@ export default function CallManager({ socketRef }) {
       try {
         const stream = await getMedia(callType);
         localStreamRef.current = stream;
-        const peer = new SimplePeer({ initiator: false, trickle: true, stream });
+        const peer = new SimplePeer({ initiator: false, trickle: true, stream, config: rtcConfig });
         peerRef.current = peer;
         peer.on('signal', (data) => {
           if (data.type === 'answer') {
             socketRef.current?.emit('call_answer', { targetUserId: from._id, answer: data, callId });
-          } else if (data.candidate) {
+          } else {
             socketRef.current?.emit('ice_candidate', { targetUserId: from._id, candidate: data, callId });
           }
         });
