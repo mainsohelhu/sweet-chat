@@ -164,16 +164,13 @@ exports.refreshToken = async (req, res) => {
     }
 
     const newAccessToken = generateToken(user._id);
-    const newRefreshToken = generateRefreshToken(user._id);
 
-    // Rotate refresh token
-    user.refreshTokens = user.refreshTokens
-      .filter((t) => t !== refreshToken)
-      .concat(newRefreshToken)
-      .slice(-5);
+    // Keep the same refresh token to prevent race conditions across tabs/concurrent requests
+    user.isOnline = true;
+    user.lastSeen = new Date();
     await user.save();
 
-    res.json({ success: true, accessToken: newAccessToken, refreshToken: newRefreshToken });
+    res.json({ success: true, accessToken: newAccessToken, refreshToken: refreshToken });
   } catch (err) {
     res.status(401).json({ success: false, message: 'Token expired or invalid.' });
   }
@@ -195,7 +192,8 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    const clientUrl = process.env.CLIENT_URL || req.headers.origin || req.get('referer')?.replace(/\/$/, '') || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
     await sendEmail({
       to: email,
       subject: 'Sweetchat - Password Reset',

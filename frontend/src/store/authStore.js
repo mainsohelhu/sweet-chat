@@ -51,8 +51,9 @@ const useAuthStore = create((set, get) => {
     },
 
     updateUser: (updates) => {
+      const currentAuth = load();
       const user = { ...get().user, ...updates };
-      save({ user, token: get().token, refreshToken: get().refreshToken });
+      save({ ...currentAuth, user });
       set({ user });
     },
   };

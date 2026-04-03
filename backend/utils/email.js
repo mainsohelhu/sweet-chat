@@ -17,7 +17,7 @@ exports.sendEmail = async ({ to, subject, html, text }) => {
     return;
   }
   return transporter.sendMail({
-    from: process.env.EMAIL_FROM || `Sweetchat <no-reply@sweetchat.app>`,
+    from: process.env.EMAIL_FROM || `"Sweetchat" <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html,
