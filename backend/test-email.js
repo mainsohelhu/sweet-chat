@@ -1,33 +1,31 @@
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.EMAIL_PORT || '587'),
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: 'officialnextgenweb@gmail.com',
-    pass: 'hiktlnoknymtanhm',
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-async function main() {
+async function testEmail() {
+  console.log(`Attempting to send email as ${process.env.EMAIL_USER}...`);
   try {
-    console.log("Attempting to connect to Gmail SMTP...");
-    await transporter.verify();
-    console.log("Connection verified!");
-    
-    console.log("Sending test email...");
     const info = await transporter.sendMail({
-      from: '"Test Server" <no-reply@sweetchat.app>',
-      to: 'officialnextgenweb@gmail.com',
-      subject: "SMTP Setup Test",
-      text: "If you received this, the SMTP is powerfully configured perfectly!",
+      from: `"Sweetchat Test" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER, // send to yourself for testing
+      subject: "Test Email from Sweetchat Backend",
+      text: "If you are reading this, the email configuration is working correctly!",
     });
-    console.log("Success! Message sent: %s", info.messageId);
-  } catch (err) {
-    console.error("FATAL SMTP ERROR:");
-    console.error(err);
+    console.log("✅ Email sent successfully!");
+    console.log("Message ID:", info.messageId);
+  } catch (error) {
+    console.error("❌ Failed to send email:");
+    console.error(error);
   }
 }
 
-main();
+testEmail();
