@@ -180,7 +180,7 @@ exports.refreshToken = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email?.toLowerCase() });
+    const user = await User.findOne({ email: email?.trim()?.toLowerCase() });
 
     // Always return success to prevent email enumeration
     if (!user) {
