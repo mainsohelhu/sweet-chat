@@ -37,17 +37,28 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// ─── MongoDB ──────────────────────────────────────────────────────────────────
-const primaryMongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
-
-mongoose
-  .connect(primaryMongoUri)
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch((err) => console.error('❌ MongoDB connection error:', err.message));
+// ─── MongoDB Connection Caching for Serverless ─────────────────────────────────
+let cachedDb = null;
+const connectDB = async () => {
+  if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
+  try {
+    cachedDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+    console.log('✅ MongoDB connected successfully');
+    return cachedDb;
+  } catch (err) {
+    console.error('❌ MongoDB connection error:', err.message);
+  }
+};
 
 const rateLimit = require('express-rate-limit');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
 app.use(helmet({ 
   contentSecurityPolicy: false, 
   crossOriginResourcePolicy: { policy: 'cross-origin' } 
