@@ -65,11 +65,8 @@ app.use(helmet({
 app.use(compression());
 app.use(morgan('dev'));
 
-// CORS — configurable origin in production vs development
-const corsOrigin = process.env.NODE_ENV === 'production' && process.env.CLIENT_URL
-  ? process.env.CLIENT_URL
-  : true;
-app.use(cors({ origin: corsOrigin, credentials: true }));
+// CORS — allow mobile and web clients across all environments
+app.use(cors({ origin: true, credentials: true }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

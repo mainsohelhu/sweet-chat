@@ -1,6 +1,12 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    if (process.env.REACT_APP_API_URL && !process.env.REACT_APP_API_URL.includes('localhost')) {
+      return process.env.REACT_APP_API_URL;
+    }
+    return '/api';
+  }
   if (process.env.REACT_APP_API_URL) return process.env.REACT_APP_API_URL;
   return '/api';
 };

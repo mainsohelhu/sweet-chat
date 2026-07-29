@@ -22,8 +22,14 @@ export function SocketProvider({ children }) {
     if (socketRef.current?.connected) return;
 
     const getSocketUrl = () => {
+      if (process.env.NODE_ENV === 'production') {
+        if (process.env.REACT_APP_SOCKET_URL && !process.env.REACT_APP_SOCKET_URL.includes('localhost')) {
+          return process.env.REACT_APP_SOCKET_URL;
+        }
+        return window.location.origin;
+      }
       if (process.env.REACT_APP_SOCKET_URL) return process.env.REACT_APP_SOCKET_URL;
-      return window.location.origin; // socket.io client uses path '/socket.io' over standard proxy
+      return window.location.origin;
     };
 
     const socket = io(getSocketUrl(), {
