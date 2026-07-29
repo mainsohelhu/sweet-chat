@@ -46,7 +46,9 @@ export default function MessageBubble({ message, isOwn, showAvatar, isGroup, cha
         _cache[message._id] = text;
         setDisplayContent(text);
       } catch (err) {
-        setDisplayContent('[🔒 Decryption failed: ' + err.message + ']');
+        const fallback = (message.content && message.content !== '🔒 Encrypted message') ? message.content : '🔒 Encrypted message';
+        _cache[message._id] = fallback;
+        setDisplayContent(fallback);
       }
     });
   }, [message._id, message.e2e]); // eslint-disable-line

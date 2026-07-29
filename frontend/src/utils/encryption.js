@@ -149,6 +149,14 @@ export const isE2EEncrypted = (msg) =>
 
 export const decryptAnyMessage = async (msg) => {
   if (!isE2EEncrypted(msg)) return msg.content || '';
-  if (msg.e2e?.isGroup) return decryptGroupMessage(msg.e2e);
-  return decryptMessage(msg.e2e);
+  try {
+    if (msg.e2e?.isGroup) return await decryptGroupMessage(msg.e2e);
+    return await decryptMessage(msg.e2e);
+  } catch (err) {
+    console.warn('Decryption error for msg:', msg._id, err.message);
+    if (msg.content && msg.content !== '🔒 Encrypted message' && msg.content !== '[Encrypted Message]') {
+      return msg.content;
+    }
+    return '🔒 Encrypted message';
+  }
 };
