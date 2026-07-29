@@ -54,6 +54,8 @@ const chatSchema = new mongoose.Schema(
     // Per-user mute/archive settings
     mutedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     archivedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    disappearingTimer: { type: Number, default: 0 }, // 0 = off, 3600 = 1h, 86400 = 24h, 604800 = 7d
+    wallpaper: { type: String, default: 'default' },
   },
   {
     timestamps: true,

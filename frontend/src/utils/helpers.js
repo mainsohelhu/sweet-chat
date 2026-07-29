@@ -4,16 +4,19 @@ import { format, formatDistanceToNow, isToday, isYesterday, isThisWeek } from 'd
 /**
  * Format message timestamp for chat bubbles
  */
+/**
+ * Format message timestamp for chat bubbles (12-hour format with AM/PM)
+ */
 export const formatMessageTime = (date) => {
-  return format(new Date(date), 'HH:mm');
+  return format(new Date(date), 'h:mm a');
 };
 
 /**
- * Format last seen / chat list timestamp
+ * Format last seen / chat list timestamp (12-hour format with AM/PM)
  */
 export const formatChatTime = (date) => {
   const d = new Date(date);
-  if (isToday(d)) return format(d, 'HH:mm');
+  if (isToday(d)) return format(d, 'h:mm a');
   if (isYesterday(d)) return 'Yesterday';
   if (isThisWeek(d)) return format(d, 'EEE');
   return format(d, 'dd/MM/yy');

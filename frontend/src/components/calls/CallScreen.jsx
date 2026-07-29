@@ -5,7 +5,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { getInitials, stringToColor } from '../../utils/helpers';
 
-export default function CallScreen({ call, onHangUp, onToggleAudio, onToggleVideo }) {
+export default function CallScreen({ call, onHangUp, onToggleAudio, onToggleVideo, onScreenShare }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const [elapsed, setElapsed] = useState(0);
@@ -140,23 +140,28 @@ export default function CallScreen({ call, onHangUp, onToggleAudio, onToggleVide
 
         {/* Toggle camera (video calls only) */}
         {callType === 'video' && (
-          <button
-            onClick={onToggleVideo}
-            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-              videoOff ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
-            }`}
-            title={videoOff ? 'Turn on camera' : 'Turn off camera'}
-          >
-            {videoOff ? (
+          <>
+            <button
+              onClick={onToggleVideo}
+              className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                videoOff ? 'bg-white text-gray-900' : 'bg-white/20 hover:bg-white/30 text-white'
+              }`}
+              title={videoOff ? 'Turn on camera' : 'Turn off camera'}
+            >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-            ) : (
+            </button>
+            <button
+              onClick={onScreenShare}
+              className="w-14 h-14 rounded-full flex items-center justify-center transition-all bg-white/20 hover:bg-white/30 text-white gesture-press"
+              title="Share Screen"
+            >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-            )}
-          </button>
+            </button>
+          </>
         )}
       </div>
     </div>

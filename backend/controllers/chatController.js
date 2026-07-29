@@ -232,3 +232,36 @@ exports.acceptChatRequest = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to process request.' });
   }
 };
+
+// ─── Set Disappearing Messages Timer ─────────────────────────────────────────
+exports.setDisappearingTimer = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { duration } = req.body; // 0, 3600, 86400, 604800
+
+    const chat = await Chat.findByIdAndUpdate(chatId, { disappearingTimer: duration }, { new: true });
+    if (!chat) return res.status(404).json({ success: false, message: 'Chat not found.' });
+
+    const io = req.app.get('io');
+    io.to(`chat:${chatId}`).emit('disappearing_timer_updated', { chatId, duration });
+
+    res.json({ success: true, disappearingTimer: chat.disappearingTimer });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to set disappearing timer.' });
+  }
+};
+
+// ─── Set Chat Wallpaper ───────────────────────────────────────────────────────
+exports.setWallpaper = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    const { wallpaper } = req.body;
+
+    const chat = await Chat.findByIdAndUpdate(chatId, { wallpaper }, { new: true });
+    if (!chat) return res.status(404).json({ success: false, message: 'Chat not found.' });
+
+    res.json({ success: true, wallpaper: chat.wallpaper });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to set wallpaper.' });
+  }
+};

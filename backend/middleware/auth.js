@@ -6,6 +6,14 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable is not defined.');
+  }
+  return secret || 'default_dev_secret';
+};
+
 /**
  * Protect routes - verify JWT access token
  */
@@ -25,7 +33,7 @@ const protect = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     // Attach user to request (without password)
     req.user = await User.findById(decoded.id).select('-password -refreshTokens');
@@ -54,7 +62,7 @@ const socketAuth = async (socket, next) => {
 
     if (!token) return next(new Error('Authentication error: no token'));
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) return next(new Error('Authentication error: user not found'));
@@ -70,7 +78,7 @@ const socketAuth = async (socket, next) => {
  * Generate JWT access token (7 days)
  */
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return jwt.sign({ id }, getJwtSecret(), {
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 };
@@ -79,7 +87,7 @@ const generateToken = (id) => {
  * Generate JWT refresh token (30 days)
  */
 const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || getJwtSecret(), {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
   });
 };

@@ -8,6 +8,7 @@ import MessageInput from './MessageInput';
 import ChatInfoPanel from './ChatInfoPanel';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { soundEffects } from '../../utils/soundEffects';
 
 export default function ChatWindow({ onBack, socketRef }) {
   const { chatId } = useParams();
@@ -24,6 +25,7 @@ export default function ChatWindow({ onBack, socketRef }) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  const [showDisappearingModal, setShowDisappearingModal] = useState(false);
   const messagesEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const isFirstLoad = useRef(true);
@@ -63,12 +65,24 @@ export default function ChatWindow({ onBack, socketRef }) {
     if (found) setChat(found);
   }, [chats, chatId]); // eslint-disable-line
 
-  // ── Scroll to BOTTOM (latest messages) on load ─────────────────────────────
-  const msgCount = messages[chatId]?.length;
+  // ── Scroll to BOTTOM (latest messages) on load & play sound for incoming ─────
+  const msgCount = messages[chatId]?.length || 0;
+  const prevMsgCount = useRef(0);
+
   useEffect(() => {
     if (!msgCount) return;
+    const chatMsgs = messages[chatId] || [];
+    const latest = chatMsgs[chatMsgs.length - 1];
+
+    if (msgCount > prevMsgCount.current && latest) {
+      const isIncoming = (latest.sender?._id || latest.sender) !== userId;
+      if (isIncoming) {
+        soundEffects.playMessageSound();
+      }
+    }
+    prevMsgCount.current = msgCount;
+
     if (isFirstLoad.current) {
-      // Instantly scroll to bottom on first load — no animation
       setTimeout(() => {
         const container = scrollContainerRef.current;
         if (container) container.scrollTop = container.scrollHeight;
@@ -82,7 +96,7 @@ export default function ChatWindow({ onBack, socketRef }) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [msgCount]);
+  }, [msgCount, chatId, messages, userId]);
 
   // ── Fix keyboard pushing header off screen on mobile ──────────────────────
   useEffect(() => {
@@ -281,13 +295,44 @@ export default function ChatWindow({ onBack, socketRef }) {
               </>
             )}
             <button onClick={() => setSearchMode(!searchMode)}
-              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${searchMode ? 'text-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-[var(--surface-2)] text-[var(--text-muted)]'}`}>
+              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${searchMode ? 'text-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'hover:bg-[var(--surface-2)] text-[var(--text-muted)]'}`}
+              title="Search Chat">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
+
+            {/* Disappearing Timer Button */}
+            <button onClick={() => setShowDisappearingModal(true)}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${chat.disappearingTimer > 0 ? 'text-amber-400 bg-amber-500/20' : 'hover:bg-[var(--surface-2)] text-[var(--text-muted)]'}`}
+              title="Disappearing Messages">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Sticky Pinned Message Banner */}
+        {chatMessages.find((m) => m.isPinned) && (
+          <div className="mx-4 mt-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between z-10 animate-slide-up">
+            <div className="flex items-center gap-2 text-xs text-amber-300 min-w-0">
+              <svg className="w-4 h-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              <span className="font-bold uppercase tracking-wider text-[10px]">Pinned:</span>
+              <span className="truncate">{chatMessages.find((m) => m.isPinned)?.content || 'Pinned Attachment'}</span>
+            </div>
+            <button onClick={() => {
+              const pinnedId = chatMessages.find((m) => m.isPinned)?._id;
+              if (pinnedId) {
+                document.getElementById(`msg-${pinnedId}`)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }} className="text-[10px] font-semibold bg-amber-500/20 text-amber-300 px-2 py-1 rounded-lg hover:bg-amber-500/30 transition-colors">
+              Jump
+            </button>
+          </div>
+        )}
 
         {/* ── Messages — scrollable middle ── */}
         <div
@@ -330,11 +375,23 @@ export default function ChatWindow({ onBack, socketRef }) {
                   showAvatar={chat.isGroup && msg.sender?._id !== userId}
                   isGroup={chat.isGroup}
                   chatId={chatId}
-                  socketRef={socketRef}
                 />
               </React.Fragment>
             );
           })}
+
+          {/* Animated typing bubble */}
+          {typingNames.length > 0 && (
+            <div className="flex items-center gap-2 mb-2 animate-fade-in">
+              <div className="bubble-in px-3.5 py-2 flex items-center gap-1.5 rounded-2xl shadow-sm">
+                <span className="text-xs text-[var(--text-muted)] font-medium mr-1">{typingNames[0]} is typing</span>
+                <span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+
           {/* Anchor to scroll to bottom */}
           <div ref={messagesEndRef} className="h-1" />
         </div>
@@ -378,6 +435,43 @@ export default function ChatWindow({ onBack, socketRef }) {
       </div>
 
       {showInfo && <ChatInfoPanel chat={chat} otherUser={otherUser} onClose={() => setShowInfo(false)} />}
+
+      {/* Disappearing Messages Modal */}
+      {showDisappearingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-[var(--text)]">Disappearing Messages</h3>
+              <button onClick={() => setShowDisappearingModal(false)} className="w-8 h-8 rounded-full bg-[var(--surface-2)] text-[var(--text-muted)] flex items-center justify-center">✕</button>
+            </div>
+            <p className="text-xs text-[var(--text-muted)]">When enabled, new messages sent in this chat will auto-delete for everyone after the chosen timer.</p>
+            <div className="space-y-2">
+              {[
+                { duration: 0, label: 'Off', desc: 'Messages remain permanently' },
+                { duration: 3600, label: '1 Hour', desc: 'Auto-delete after 60 minutes' },
+                { duration: 86400, label: '24 Hours', desc: 'Auto-delete after 1 day' },
+                { duration: 604800, label: '7 Days', desc: 'Auto-delete after 1 week' },
+              ].map((item) => (
+                <button key={item.duration} onClick={async () => {
+                  try {
+                    await api.put(`/chats/${chatId}/disappearing`, { duration: item.duration });
+                    setChat((prev) => ({ ...prev, disappearingTimer: item.duration }));
+                    setShowDisappearingModal(false);
+                    toast.success(`Disappearing timer set to ${item.label}`);
+                  } catch (_) { toast.error('Failed to set timer'); }
+                }}
+                  className={`w-full text-left p-3 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all gesture-press ${chat.disappearingTimer === item.duration ? 'border-amber-500 bg-amber-500/10 text-amber-300' : 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)]'}`}>
+                  <div>
+                    <p className="font-bold text-sm">{item.label}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] font-normal">{item.desc}</p>
+                  </div>
+                  {chat.disappearingTimer === item.duration && <span className="text-amber-400">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

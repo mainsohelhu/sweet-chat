@@ -172,6 +172,17 @@ router.put('/me/password', protect, async (req, res) => {
   }
 });
 
+// Remove avatar (reset to default)
+router.delete('/me/avatar', protect, async (req, res) => {
+  try {
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(req.user.displayName || 'User')}&background=6366f1&color=ffffff&size=128`;
+    const user = await User.findByIdAndUpdate(req.user._id, { avatar: defaultAvatar }, { new: true });
+    res.json({ success: true, user: user.toPublicProfile() });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to remove avatar' });
+  }
+});
+
 // Update profile (bio, username, isPrivate, displayName, statusMessage)
 router.put('/me/settings', protect, async (req, res) => {
   try {

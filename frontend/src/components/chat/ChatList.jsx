@@ -155,7 +155,7 @@ export default function ChatList({ onSelect }) {
 
             return (
               <button key={chat._id} onClick={() => handleSelect(chat)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-all hover:bg-[var(--surface-2)] text-left ${isActive ? 'bg-[var(--surface-2)] border-r-2 border-brand-500' : ''}`}>
+                className={`w-full flex items-center gap-3 px-4 py-3 transition-all hover:bg-[var(--surface-2)] text-left gesture-hover gesture-press ${isActive ? 'bg-[var(--surface-2)] border-r-2 border-brand-500' : ''}`}>
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
                   <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center text-white font-semibold text-sm"
@@ -189,6 +189,17 @@ export default function ChatList({ onSelect }) {
           })
         )}
       </div>
+
+      {/* Android Material 3 Floating Action Button (FAB) */}
+      <button
+        onClick={() => setShowNewChat(true)}
+        className="fixed bottom-20 right-5 z-40 w-14 h-14 rounded-2xl bg-brand-600 text-white shadow-2xl flex items-center justify-center hover:bg-brand-500 transition-transform active:scale-90 gesture-press border border-white/20 lg:hidden"
+        aria-label="New Conversation"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {showNewChat && <NewChatModal onClose={() => setShowNewChat(false)} />}
     </div>

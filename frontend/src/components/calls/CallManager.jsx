@@ -183,6 +183,26 @@ export default function CallManager({ socketRef }) {
     if (track) { track.enabled = !track.enabled; setActiveCall((p) => p ? { ...p, videoOff: !p.videoOff } : null); }
   }, []);
 
+  const handleScreenShare = useCallback(async () => {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      if (peerRef.current && localStreamRef.current) {
+        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (videoTrack) peerRef.current.replaceTrack(videoTrack, screenTrack, localStreamRef.current);
+      }
+      toast.success('Screen sharing started');
+      screenTrack.onended = () => {
+        if (peerRef.current && localStreamRef.current) {
+          const videoTrack = localStreamRef.current.getVideoTracks()[0];
+          if (videoTrack) peerRef.current.replaceTrack(screenTrack, videoTrack, localStreamRef.current);
+        }
+      };
+    } catch (_) {
+      toast.error('Screen share canceled');
+    }
+  }, []);
+
   if (!activeCall) return null;
-  return <CallScreen call={activeCall} onHangUp={hangUp} onToggleAudio={toggleAudio} onToggleVideo={toggleVideo} />;
+  return <CallScreen call={activeCall} onHangUp={hangUp} onToggleAudio={toggleAudio} onToggleVideo={toggleVideo} onScreenShare={handleScreenShare} />;
 }

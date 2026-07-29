@@ -178,9 +178,10 @@ exports.searchMessages = async (req, res) => {
     const chat = await Chat.findOne({ _id: chatId, participants: req.user._id });
     if (!chat) return res.status(404).json({ success: false, message: 'Chat not found.' });
 
+    const safeQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const messages = await Message.find({
       chat: chatId,
-      content: { $regex: xss(query.trim()), $options: 'i' },
+      content: { $regex: safeQuery, $options: 'i' },
       deletedFor: { $ne: req.user._id },
       deletedForEveryone: false,
     })
@@ -222,5 +223,98 @@ exports.addReaction = async (req, res) => {
     res.json({ success: true, reactions: message.reactions });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to add reaction.' });
+  }
+};
+
+// ─── Pin / Unpin Message ──────────────────────────────────────────────────────
+exports.togglePinMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).json({ success: false, message: 'Message not found.' });
+
+    message.isPinned = !message.isPinned;
+    await message.save();
+
+    const io = req.app.get('io');
+    io.to(`chat:${message.chat}`).emit('message_pinned', {
+      messageId: message._id,
+      chatId: message.chat,
+      isPinned: message.isPinned,
+      content: message.content,
+    });
+
+    res.json({ success: true, isPinned: message.isPinned, message });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to pin message.' });
+  }
+};
+
+// ─── Star / Unstar Message ────────────────────────────────────────────────────
+exports.toggleStarMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const message = await Message.findById(messageId);
+    if (!message) return res.status(404).json({ success: false, message: 'Message not found.' });
+
+    const isStarred = message.starredBy?.some((u) => u.toString() === req.user._id.toString());
+    if (isStarred) {
+      message.starredBy = message.starredBy.filter((u) => u.toString() !== req.user._id.toString());
+    } else {
+      message.starredBy.push(req.user._id);
+    }
+
+    await message.save();
+    res.json({ success: true, isStarred: !isStarred });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to star message.' });
+  }
+};
+
+// ─── Vote on Poll ─────────────────────────────────────────────────────────────
+exports.votePoll = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { optionIndex } = req.body;
+
+    const message = await Message.findById(messageId);
+    if (!message || !message.pollData) {
+      return res.status(404).json({ success: false, message: 'Poll not found.' });
+    }
+
+    const userId = req.user._id;
+    // Toggle vote for the selected option
+    message.pollData.options.forEach((opt, idx) => {
+      opt.votes = opt.votes.filter((v) => v.toString() !== userId.toString());
+      if (idx === optionIndex) {
+        opt.votes.push(userId);
+      }
+    });
+
+    await message.save();
+
+    const io = req.app.get('io');
+    io.to(`chat:${message.chat}`).emit('poll_voted', {
+      messageId: message._id,
+      pollData: message.pollData,
+    });
+
+    res.json({ success: true, pollData: message.pollData });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to cast vote.' });
+  }
+};
+
+// ─── Get All Starred Messages for User ───────────────────────────────────────
+exports.getStarredMessages = async (req, res) => {
+  try {
+    const messages = await Message.find({ starredBy: req.user._id, deletedForEveryone: { $ne: true } })
+      .populate('sender', 'displayName avatar')
+      .populate('chat', 'name isGroup avatar')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ success: true, messages });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to fetch starred messages.' });
   }
 };

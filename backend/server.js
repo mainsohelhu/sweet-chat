@@ -37,10 +37,25 @@ const io = new Server(server, {
 app.set('io', io);
 
 // ─── MongoDB ──────────────────────────────────────────────────────────────────
+const primaryMongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/sweetchat';
+const fallbackMongoUri = 'mongodb://127.0.0.1:27017/sweetchat';
+
 mongoose
-  .connect(process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/sweetchat')
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch((err) => { console.error('❌ MongoDB error:', err); process.exit(1); });
+  .connect(primaryMongoUri)
+  .then(() => console.log('✅ MongoDB connected successfully'))
+  .catch((err) => {
+    console.error('⚠️ Primary MongoDB connection error:', err.message);
+    if (primaryMongoUri !== fallbackMongoUri) {
+      console.log('🔄 Attempting connection to fallback local MongoDB...');
+      mongoose.connect(fallbackMongoUri)
+        .then(() => console.log('✅ MongoDB connected (fallback local DB)'))
+        .catch((fallbackErr) => {
+          console.error('❌ Fallback MongoDB connection error:', fallbackErr.message);
+        });
+    }
+  });
+
+const rateLimit = require('express-rate-limit');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet({ 
@@ -50,8 +65,11 @@ app.use(helmet({
 app.use(compression());
 app.use(morgan('dev'));
 
-// CORS — allow everything in development
-app.use(cors({ origin: true, credentials: true }));
+// CORS — configurable origin in production vs development
+const corsOrigin = process.env.NODE_ENV === 'production' && process.env.CLIENT_URL
+  ? process.env.CLIENT_URL
+  : true;
+app.use(cors({ origin: corsOrigin, credentials: true }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -60,8 +78,17 @@ if (process.env.USE_LOCAL_STORAGE === 'true') {
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 }
 
+// Rate limiting for sensitive authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { success: false, message: 'Too many requests from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
@@ -89,19 +116,28 @@ app.use((req, res, next) => {
 });
 
 // ─── Production Frontend Serving ──────────────────────────────────────────────
+const fs = require('fs');
 if (process.env.NODE_ENV === 'production') {
-  const buildPath = path.resolve(__dirname, '../frontend/build');
-  app.use(express.static(buildPath));
+  const buildPath = fs.existsSync(path.resolve(__dirname, '../frontend/build'))
+    ? path.resolve(__dirname, '../frontend/build')
+    : path.resolve(__dirname, '../frontend/dist');
   
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(buildPath, 'index.html'));
-  });
+  if (fs.existsSync(buildPath)) {
+    app.use(express.static(buildPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(buildPath, 'index.html'));
+    });
+  }
 }
 
 // ─── Error Handler (MUST BE LAST) ─────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack || err);
-  res.status(err.statusCode || 500).json({ success: false, message: err.message || 'Server error', stack: err.stack });
+  const response = { success: false, message: err.message || 'Server error' };
+  if (process.env.NODE_ENV !== 'production') {
+    response.stack = err.stack;
+  }
+  res.status(err.statusCode || 500).json(response);
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────

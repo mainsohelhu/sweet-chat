@@ -43,6 +43,10 @@ userSchema.pre('validate', function (next) {
 });
 
 userSchema.pre('save', async function (next) {
+  if (!this.avatar) {
+    const name = encodeURIComponent(this.displayName || this.username || 'User');
+    this.avatar = `https://ui-avatars.com/api/?name=${name}&background=6366f1&color=ffffff&size=128`;
+  }
   if (!this.isModified('password') || !this.password) return next();
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
@@ -54,13 +58,14 @@ userSchema.methods.comparePassword = async function (p) {
 };
 
 userSchema.methods.toPublicProfile = function () {
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(this.displayName || 'User')}&background=6366f1&color=ffffff&size=128`;
   return {
     _id: this._id,
     displayName: this.displayName,
     username: this.username,
     email: this.email,
     phone: this.phone,
-    avatar: this.avatar,
+    avatar: this.avatar || defaultAvatar,
     bio: this.bio,
     statusMessage: this.statusMessage,
     isOnline: this.isOnline,

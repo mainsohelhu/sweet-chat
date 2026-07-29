@@ -15,6 +15,8 @@ import PostsFeed from '../components/posts/PostsFeed';
 import CallManager from '../components/calls/CallManager';
 import IncomingCallModal from '../components/calls/IncomingCallModal';
 
+import StarredMessagesPanel from '../components/chat/StarredMessagesPanel';
+
 export default function ChatPage() {
   const socketRef = useSocket();
   const location = useLocation();
@@ -59,6 +61,7 @@ export default function ChatPage() {
           {panel === 'friends'  && <FriendsPanel />}
           {panel === 'contacts' && <ContactsPanel onSelect={handleChatSelect} />}
           {panel === 'profile'  && <ProfilePanel />}
+          {panel === 'starred'  && <StarredMessagesPanel />}
         </div>
       </div>
 

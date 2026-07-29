@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="blackGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181B" />
+      <stop offset="50%" stop-color="#09090B" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000000" flood-opacity="0.8" />
+    </filter>
+  </defs>
+  <!-- Sleek black background -->
+  <rect width="512" height="512" rx="128" fill="url(#blackGradient)" />
+  <!-- Border outline -->
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="#27272A" stroke-width="4" />
+  <!-- Chat bubble icon -->
+  <g filter="url(#glow)">
+    <path d="M140 140 C140 100, 372 100, 372 140 C372 260, 290 290, 240 330 C220 346, 200 360, 180 376 C186 350, 190 330, 180 320 C150 300, 140 240, 140 140 Z" fill="#FFFFFF" />
+    <!-- Black heart accent inside chat bubble -->
+    <path d="M256 240 C256 240, 216 195, 192 215 C172 232, 192 265, 256 305 C320 265, 340 232, 320 215 C296 195, 256 240, 256 240 Z" fill="#09090B" />
+  </g>
+</svg>

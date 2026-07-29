@@ -161,20 +161,32 @@ export default function PostCard({ post: initialPost, onDelete, compact }) {
 
         {/* Action buttons */}
         {!compact && (
-          <div className="flex border-t border-[var(--border)] mx-4 mt-2">
+          <div className="flex items-center justify-between border-t border-[var(--border)] px-2 py-1.5 mx-2 mt-2">
+            {/* Like */}
             <button onClick={handleLike}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-xl transition-all duration-300 active:scale-90 ${isLiked ? 'text-red-500' : 'text-[var(--text-muted)] hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10'}`}>
-              <svg className={`w-5 h-5 transition-transform duration-300 ${isLiked ? 'scale-110 drop-shadow-md' : 'scale-100'}`} fill={isLiked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isLiked ? 2 : 1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold rounded-2xl transition-all gesture-press ${isLiked ? 'text-red-500 bg-red-500/10' : 'text-[var(--text-muted)] hover:text-red-400 hover:bg-[var(--surface-2)]'}`}>
+              <svg className={`w-4 h-4 transition-transform duration-300 ${isLiked ? 'scale-110 fill-current' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              {isLiked ? 'Liked' : 'Like'}
+              <span>{isLiked ? 'Liked' : 'Like'}</span>
             </button>
+
+            {/* Comment */}
             <button onClick={() => setShowComments(!showComments)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/10 rounded-xl transition-colors active:scale-95">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-[var(--text-muted)] hover:text-brand-400 hover:bg-[var(--surface-2)] rounded-2xl transition-all gesture-press">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
-              Comment
+              <span>Comment</span>
+            </button>
+
+            {/* Share */}
+            <button onClick={handleShare}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-[var(--text-muted)] hover:text-emerald-400 hover:bg-[var(--surface-2)] rounded-2xl transition-all gesture-press">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              <span>Share</span>
             </button>
           </div>
         )}

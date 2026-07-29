@@ -44,6 +44,17 @@ const messageSchema = new mongoose.Schema(
     deletedForEveryone: { type: Boolean, default: false },
     deletedAt: Date,
     reactions: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, emoji: String }],
+    isPinned: { type: Boolean, default: false },
+    starredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    pollData: {
+      question: String,
+      options: [
+        {
+          optionText: String,
+          votes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+        },
+      ],
+    },
     callData: {
       type: { type: String, enum: ['audio', 'video'] },
       status: { type: String, enum: ['missed', 'ended', 'rejected'] },
