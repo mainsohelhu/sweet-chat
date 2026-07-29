@@ -26,6 +26,7 @@ const notificationRoutes = require('./routes/notifications');
 const initSocketHandlers = require('./socket/socketHandlers');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many requests from this IP, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
