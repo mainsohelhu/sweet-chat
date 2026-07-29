@@ -180,37 +180,44 @@ exports.refreshToken = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email?.trim()?.toLowerCase() });
-
-    // Always return success to prevent email enumeration
-    if (!user) {
-      return res.json({ success: true, message: 'If that email exists, a reset link was sent.' });
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Please provide an email address.' });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
-    await user.save();
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
 
-    const clientUrl = process.env.CLIENT_URL || req.headers.origin || req.get('referer')?.replace(/\/$/, '') || 'http://localhost:3000';
-    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
-    await sendEmail({
-      to: email,
-      subject: 'Sweetchat - Password Reset',
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-        <a href="${resetUrl}" style="background:#6C63FF;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;">
-          Reset Password
-        </a>
-        <p>If you didn't request this, ignore this email.</p>
-      `,
-    });
+    if (user) {
+      try {
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
+        await user.save();
 
-    res.json({ success: true, message: 'If that email exists, a reset link was sent.' });
+        const clientUrl = process.env.CLIENT_URL || req.headers.origin || req.get('referer')?.replace(/\/$/, '') || 'http://localhost:3000';
+        const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+        
+        sendEmail({
+          to: cleanEmail,
+          subject: 'Sweetchat - Password Reset',
+          html: `
+            <h2>Password Reset Request</h2>
+            <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+            <a href="${resetUrl}" style="background:#6C63FF;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;">
+              Reset Password
+            </a>
+            <p>If you didn't request this, ignore this email.</p>
+          `,
+        }).catch((e) => console.warn('Email dispatch warning:', e.message));
+      } catch (tokenErr) {
+        console.error('Error generating reset token:', tokenErr.message);
+      }
+    }
+
+    return res.json({ success: true, message: 'If that email exists, a reset link was sent.' });
   } catch (err) {
-    console.error('Forgot password error:', err);
-    res.status(500).json({ success: false, message: 'Failed to send reset email.' });
+    console.error('Forgot password error:', err.message);
+    return res.json({ success: true, message: 'If that email exists, a reset link was sent.' });
   }
 };
 
