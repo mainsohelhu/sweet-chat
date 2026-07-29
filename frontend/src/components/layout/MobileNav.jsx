@@ -3,7 +3,6 @@
  */
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
-import useThemeStore from '../../store/themeStore';
 import { getInitials, stringToColor } from '../../utils/helpers';
 
 export default function MobileNav({ active, onChange, showList }) {
@@ -21,8 +20,6 @@ export default function MobileNav({ active, onChange, showList }) {
     return () => window.removeEventListener('sw_notif_badge', handler);
   }, []);
   const user = useAuthStore((s) => s.user);
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
 
   return (
     <div className={`lg:hidden fixed bottom-3 left-3 right-3 z-50 rounded-3xl glass shadow-2xl border border-[var(--border)] flex items-center justify-around px-2 py-2.5 transition-transform duration-500 ease-out ${showList ? 'translate-y-0' : 'translate-y-[150%]'}`}>

@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
-import useThemeStore from '../../store/themeStore';
 import { getInitials, stringToColor } from '../../utils/helpers';
 
 const NavIcon = ({ icon, label, active, onClick, badge }) => (

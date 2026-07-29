@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import useAuthStore from '../../store/authStore';
-import { getInitials, stringToColor, formatMessageTime } from '../../utils/helpers';
+import { getInitials, stringToColor } from '../../utils/helpers';
 import PostCard from './PostCard';
 
 export default function UserProfileModal({ userId, onClose }) {

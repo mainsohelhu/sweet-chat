@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import useChatStore from '../../store/chatStore';
 import useAuthStore from '../../store/authStore';
 import { formatMessageTime, formatFileSize, getInitials, stringToColor } from '../../utils/helpers';
-import { decryptAnyMessage, initSodium, getOrCreateKeyPair, isE2EEncrypted } from '../../utils/encryption';
+import { decryptAnyMessage, initSodium, isE2EEncrypted } from '../../utils/encryption';
 import MediaViewer from '../ui/MediaViewer';
 
 import { soundEffects } from '../../utils/soundEffects';
