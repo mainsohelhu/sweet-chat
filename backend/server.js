@@ -37,23 +37,12 @@ const io = new Server(server, {
 app.set('io', io);
 
 // ─── MongoDB ──────────────────────────────────────────────────────────────────
-const primaryMongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/sweetchat';
-const fallbackMongoUri = 'mongodb://127.0.0.1:27017/sweetchat';
+const primaryMongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
 
 mongoose
   .connect(primaryMongoUri)
   .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch((err) => {
-    console.error('⚠️ Primary MongoDB connection error:', err.message);
-    if (primaryMongoUri !== fallbackMongoUri) {
-      console.log('🔄 Attempting connection to fallback local MongoDB...');
-      mongoose.connect(fallbackMongoUri)
-        .then(() => console.log('✅ MongoDB connected (fallback local DB)'))
-        .catch((fallbackErr) => {
-          console.error('❌ Fallback MongoDB connection error:', fallbackErr.message);
-        });
-    }
-  });
+  .catch((err) => console.error('❌ MongoDB connection error:', err.message));
 
 const rateLimit = require('express-rate-limit');
 
