@@ -142,10 +142,12 @@ app.use((err, req, res, next) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Sweetchat server running on port ${PORT}`);
-  console.log(`📡 Socket.io ready`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Sweetchat server running on port ${PORT}`);
+    console.log(`📡 Socket.io ready`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
-module.exports = { app, server, io };
+module.exports = app;
