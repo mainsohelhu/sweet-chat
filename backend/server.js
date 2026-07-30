@@ -48,28 +48,42 @@ app.set('io', io);
 // ─── MongoDB Connection Caching for Serverless ─────────────────────────────────
 let cachedDb = null;
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) return mongoose.connection;
-  if (mongoose.connection.readyState === 2) return; // connecting in progress
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+  if (mongoose.connection.readyState === 2) {
+    // Wait for existing connection attempt
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (mongoose.connection.readyState === 1) return mongoose.connection;
+  }
 
   const primaryUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
-  const uris = process.env.VERCEL || process.env.NODE_ENV === 'production' 
-    ? [primaryUri] 
-    : [primaryUri, 'mongodb://127.0.0.1:27017/sweetchat', 'mongodb://localhost:27017/sweetchat'];
+  const uris = (process.env.VERCEL || process.env.NODE_ENV === 'production')
+    ? [primaryUri]
+    : [primaryUri, 'mongodb://127.0.0.1:27017/sweetchat'];
+
+  console.log(`🔌 Attempting MongoDB connection... (state: ${mongoose.connection.readyState})`);
+  console.log(`🔌 VERCEL env: ${process.env.VERCEL}, NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`🔌 MONGODB_URI set: ${!!process.env.MONGODB_URI}`);
 
   let lastError = null;
   for (const uri of uris) {
     try {
-      cachedDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
-      console.log(`✅ MongoDB connected successfully (${uri.includes('cluster0') ? 'Atlas Cloud' : 'Local MongoDB'})`);
+      cachedDb = await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+      });
+      console.log(`✅ MongoDB connected (${uri.includes('cluster0') ? 'Atlas Cloud' : 'Local'})`);
       return cachedDb;
     } catch (err) {
       lastError = err;
-      console.warn(`⚠️ Connection attempt failed for ${uri.includes('cluster0') ? 'Atlas Cloud' : uri}: ${err.message}`);
+      console.error(`❌ MongoDB connection failed: ${err.message}`);
+      console.error(`❌ Error name: ${err.name}, code: ${err.code}`);
     }
   }
 
-  console.error('❌ All MongoDB connection attempts failed:', lastError?.message);
-  throw new Error(`Database unavailable (${lastError?.message || 'Connection refused'})`);
+  throw new Error(`Database unavailable: ${lastError?.message || 'Connection refused'}`);
 };
 
 const rateLimit = require('express-rate-limit');
