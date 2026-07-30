@@ -1,35 +1,36 @@
 {
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "framework": "create-react-app"
-    },
-    "backend": {
-      "root": "backend",
-      "entrypoint": "server.js"
+  "version": 2,
+  "buildCommand": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+  "outputDirectory": "frontend/build",
+  "functions": {
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "backend"
-      }
+      "destination": "/api/index.js"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "backend"
-      }
+      "destination": "/api/index.js"
     },
     {
       "source": "/(.*)",
-      "destination": {
-        "type": "service",
-        "service": "frontend"
-      }
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
+      ]
     }
   ]
 }

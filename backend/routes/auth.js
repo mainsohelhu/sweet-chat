@@ -48,10 +48,11 @@ router.put('/reset-password/:token', resetPassword);
 router.get('/verify-email/:token', verifyEmail);
 router.get('/me', protect, getMe);
 
-module.exports = router;
-
 // OTP routes
 const { sendOTP, verifyOTP, loginWithOTP } = require('../controllers/authController');
 router.post('/send-otp', authLimiter, sendOTP);
 router.post('/verify-otp', authLimiter, verifyOTP);
 router.post('/login-otp', authLimiter, loginWithOTP);
+
+module.exports = router;
+

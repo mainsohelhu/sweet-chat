@@ -19,6 +19,8 @@ exports.signup = async (req, res) => {
   }
 
   try {
+    const { displayName, email, phone, password } = req.body;
+
     if (!email && !phone) {
       return res.status(400).json({
         success: false,
@@ -95,11 +97,23 @@ exports.login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
-    // Find by email or phone
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, message: 'Please provide your login credentials.' });
+    }
+
+    // Find by email, phone, or username
     const isEmail = identifier.includes('@');
-    const user = await User.findOne(
-      isEmail ? { email: identifier.toLowerCase() } : { phone: identifier }
-    ).select('+password +refreshTokens');
+    const isPhone = /^[\+]?[\d\s\-\(\)]{7,15}$/.test(identifier.trim());
+    let query;
+    if (isEmail) {
+      query = { email: identifier.toLowerCase().trim() };
+    } else if (isPhone) {
+      query = { phone: identifier.trim() };
+    } else {
+      // username lookup
+      query = { username: identifier.toLowerCase().trim() };
+    }
+    const user = await User.findOne(query).select('+password +refreshTokens');
 
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
@@ -199,19 +213,43 @@ exports.forgotPassword = async (req, res) => {
         user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
         await user.save();
 
-        const clientUrl = process.env.CLIENT_URL || req.headers.origin || req.get('referer')?.replace(/\/$/, '') || 'http://localhost:3000';
+        // Determine the correct client URL for the reset link
+        // Priority: explicit env var > request origin > referer > production domain > localhost
+        let clientUrl = process.env.CLIENT_URL;
+        if (!clientUrl || clientUrl.includes('localhost')) {
+          // Try to get origin from request headers (works in serverless too)
+          const origin = req.headers.origin || req.headers.referer;
+          if (origin && !origin.includes('localhost')) {
+            clientUrl = origin.replace(/\/$/, '');
+          } else if (process.env.VERCEL_URL) {
+            clientUrl = `https://${process.env.VERCEL_URL}`;
+          } else {
+            clientUrl = 'http://localhost:3000';
+          }
+        }
         const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
         
-        sendEmail({
+        await sendEmail({
           to: cleanEmail,
-          subject: 'Sweetchat - Password Reset',
+          subject: 'Sweetchat - Reset Your Password',
           html: `
-            <h2>Password Reset Request</h2>
-            <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-            <a href="${resetUrl}" style="background:#6C63FF;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;">
-              Reset Password
-            </a>
-            <p>If you didn't request this, ignore this email.</p>
+            <!DOCTYPE html>
+            <html>
+            <body style="font-family:Arial,sans-serif;background:#f4f4f9;padding:20px;">
+              <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+                <h2 style="color:#6C63FF;margin-top:0;">Reset Your Password</h2>
+                <p style="color:#555;">We received a request to reset your Sweetchat password. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
+                <div style="text-align:center;margin:32px 0;">
+                  <a href="${resetUrl}" style="background:#6C63FF;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-size:16px;font-weight:bold;display:inline-block;">
+                    Reset Password
+                  </a>
+                </div>
+                <p style="color:#888;font-size:13px;">Or copy this link into your browser:<br/><a href="${resetUrl}" style="color:#6C63FF;word-break:break-all;">${resetUrl}</a></p>
+                <hr style="border:none;border-top:1px solid #eee;margin:24px 0;"/>
+                <p style="color:#aaa;font-size:12px;">If you didn't request a password reset, you can safely ignore this email. Your password won't change.</p>
+              </div>
+            </body>
+            </html>
           `,
         }).catch((e) => console.warn('Email dispatch warning:', e.message));
       } catch (tokenErr) {
