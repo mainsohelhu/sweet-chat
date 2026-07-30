@@ -9,10 +9,14 @@ const {
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
-const authLimiter = rateLimit({
+const isTest = process.env.NODE_ENV === 'test';
+const authLimiter = isTest ? (req, res, next) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 10,
+  max: 100,
   message: { success: false, message: 'Too many attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 router.post(

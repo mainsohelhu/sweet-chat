@@ -19,7 +19,12 @@ exports.signup = async (req, res) => {
   }
 
   try {
-    const { displayName, email, phone, password } = req.body;
+    if (!email && !phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide either an email or a phone number.',
+      });
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({

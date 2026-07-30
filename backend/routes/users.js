@@ -10,13 +10,13 @@ router.get('/search', protect, async (req, res) => {
   try {
     const { q } = req.query;
     if (!q || q.trim().length < 1) return res.json({ success: true, users: [] });
-    const query = xss(q.trim());
+    const safeQuery = xss(q.trim()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const users = await User.find({
       $and: [
         { _id: { $ne: req.user._id } },
         { $or: [
-          { displayName: { $regex: query, $options: 'i' } },
-          { username: { $regex: query, $options: 'i' } },
+          { displayName: { $regex: safeQuery, $options: 'i' } },
+          { username: { $regex: safeQuery, $options: 'i' } },
         ]},
       ],
     }).select('displayName username avatar isOnline lastSeen statusMessage bio').limit(20).lean();
@@ -101,8 +101,6 @@ router.post('/block/:userId', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to block user.' });
   }
 });
-
-module.exports = router;
 
 // Upload/update public key (called after key pair generation on client)
 router.post('/me/public-key', protect, async (req, res) => {
@@ -246,3 +244,5 @@ router.get('/suggestions', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed' });
   }
 });
+
+module.exports = router;

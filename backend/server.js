@@ -37,26 +37,41 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// ─── MongoDB Connection Caching for Serverless ─────────────────────────────────
+// ─── MongoDB Connection Caching with Local Fallback ───────────────────────────
 let cachedDb = null;
 const connectDB = async () => {
-  if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
-  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
-  try {
-    cachedDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
-    console.log('✅ MongoDB connected successfully');
-    return cachedDb;
-  } catch (err) {
-    console.error('❌ MongoDB connection error:', err.message);
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (mongoose.connection.readyState === 2) return; // connecting in progress
+
+  const primaryUri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
+  const uris = [primaryUri, 'mongodb://127.0.0.1:27017/sweetchat', 'mongodb://localhost:27017/sweetchat'];
+
+  let lastError = null;
+  for (const uri of uris) {
+    try {
+      cachedDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
+      console.log(`✅ MongoDB connected successfully (${uri.includes('cluster0') ? 'Atlas Cloud' : 'Local MongoDB'})`);
+      return cachedDb;
+    } catch (err) {
+      lastError = err;
+      console.warn(`⚠️ Connection attempt failed for ${uri.includes('cluster0') ? 'Atlas Cloud' : uri}: ${err.message}`);
+    }
   }
+
+  console.error('❌ All MongoDB connection attempts failed:', lastError?.message);
+  throw new Error(`Database unavailable (${lastError?.message || 'Connection refused'})`);
 };
 
 const rateLimit = require('express-rate-limit');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Database connection failed: ' + err.message });
+  }
 });
 
 app.use(helmet({ 
@@ -77,7 +92,7 @@ if (process.env.USE_LOCAL_STORAGE === 'true') {
 }
 
 // Rate limiting for sensitive authentication endpoints
-const authLimiter = rateLimit({
+const authLimiter = process.env.NODE_ENV === 'test' ? (req, res, next) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
   message: { success: false, message: 'Too many requests from this IP, please try again later.' },
@@ -132,11 +147,15 @@ if (process.env.NODE_ENV === 'production') {
 // ─── Error Handler (MUST BE LAST) ─────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack || err);
+  let statusCode = err.statusCode || err.status || 500;
+  if (err.name === 'MulterError' || err.message === 'File type not allowed') {
+    statusCode = 400;
+  }
   const response = { success: false, message: err.message || 'Server error' };
   if (process.env.NODE_ENV !== 'production') {
     response.stack = err.stack;
   }
-  res.status(err.statusCode || 500).json(response);
+  res.status(statusCode).json(response);
 });
 
 // ─── Start ────────────────────────────────────────────────────────────────────

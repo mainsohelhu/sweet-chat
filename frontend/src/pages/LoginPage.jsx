@@ -9,15 +9,22 @@ export default function LoginPage() {
   const isLoading = useAuthStore((s) => s.isLoading);
   const [form, setForm] = useState({ identifier: '', password: '' });
   const [showPass, setShowPass] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    if (!form.identifier || !form.password) return toast.error('Fill in all fields');
-    const res = await login(form.identifier, form.password);
+    setErrorMsg('');
+    if (!form.identifier.trim() || !form.password) {
+      const msg = 'Please enter your email, phone number, or username and password.';
+      setErrorMsg(msg);
+      return toast.error(msg);
+    }
+    const res = await login(form.identifier.trim(), form.password);
     if (res.success) { 
       toast.success('Welcome back!'); 
       navigate('/'); 
     } else {
+      setErrorMsg(res.message);
       toast.error(res.message);
     }
   };
@@ -41,10 +48,19 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-[var(--surface)] rounded-3xl shadow-card border border-[var(--border)] p-8">
+          {errorMsg && (
+            <div className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm font-medium flex items-start gap-3 animate-fade-in">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           <form onSubmit={handleEmailLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[var(--text)] mb-1.5">Email</label>
-              <input type="email" className="input-field" placeholder="you@example.com"
+              <label className="block text-sm font-medium text-[var(--text)] mb-1.5">Email, Phone, or Username</label>
+              <input type="text" className="input-field" placeholder="you@example.com or phone/username"
                 value={form.identifier} onChange={(e) => setForm({ ...form, identifier: e.target.value })} autoFocus />
             </div>
             

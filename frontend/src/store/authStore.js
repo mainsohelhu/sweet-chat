@@ -8,6 +8,17 @@ const save = (data) => {
   try { localStorage.setItem('sc_auth', JSON.stringify(data)); } catch {}
 };
 
+const parseError = (err, fallback) => {
+  if (err.response?.data?.message) return err.response.data.message;
+  if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+    return err.response.data.errors.map((e) => e.msg || e.message || e).join('. ');
+  }
+  if (err.message === 'Network Error' || !err.response) {
+    return 'Unable to reach backend server. Please verify your connection or backend status.';
+  }
+  return err.message || fallback;
+};
+
 const useAuthStore = create((set, get) => {
   const initial = load();
   return {
@@ -26,7 +37,7 @@ const useAuthStore = create((set, get) => {
         return { success: true };
       } catch (err) {
         set({ isLoading: false });
-        return { success: false, message: err.response?.data?.message || 'Login failed' };
+        return { success: false, message: parseError(err, 'Login failed. Please try again.') };
       }
     },
 
@@ -40,7 +51,7 @@ const useAuthStore = create((set, get) => {
         return { success: true };
       } catch (err) {
         set({ isLoading: false });
-        return { success: false, message: err.response?.data?.message || 'Signup failed' };
+        return { success: false, message: parseError(err, 'Signup failed. Please try again.') };
       }
     },
 

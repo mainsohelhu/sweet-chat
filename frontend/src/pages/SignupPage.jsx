@@ -11,19 +11,38 @@ export default function SignupPage() {
     displayName: '', email: '', password: '', confirm: ''
   });
   const [showPass, setShowPass] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.displayName.trim()) return toast.error('Name is required');
-    if (!form.email) return toast.error('Email is required');
-    if (form.password.length < 8) return toast.error('Password must be 8+ characters');
-    if (form.password !== form.confirm) return toast.error('Passwords do not match');
+    setErrorMsg('');
+    if (!form.displayName.trim()) {
+      const msg = 'Name is required';
+      setErrorMsg(msg);
+      return toast.error(msg);
+    }
+    if (!form.email) {
+      const msg = 'Email is required';
+      setErrorMsg(msg);
+      return toast.error(msg);
+    }
+    if (form.password.length < 8) {
+      const msg = 'Password must be 8+ characters';
+      setErrorMsg(msg);
+      return toast.error(msg);
+    }
+    if (form.password !== form.confirm) {
+      const msg = 'Passwords do not match';
+      setErrorMsg(msg);
+      return toast.error(msg);
+    }
     
     const res = await signup({ displayName: form.displayName.trim(), email: form.email, password: form.password });
     if (res.success) { 
       toast.success('Account created! 🎉'); 
       navigate('/'); 
     } else {
+      setErrorMsg(res.message);
       toast.error(res.message);
     }
   };
@@ -47,6 +66,14 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-[var(--surface)] rounded-3xl shadow-card border border-[var(--border)] p-8">
+          {errorMsg && (
+            <div className="mb-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm font-medium flex items-start gap-3 animate-fade-in">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{errorMsg}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-[var(--text)] mb-1.5">Display Name</label>

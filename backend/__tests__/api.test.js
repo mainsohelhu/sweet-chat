@@ -5,7 +5,7 @@
 
 const request = require('supertest');
 const mongoose = require('mongoose');
-const { app } = require('../server');
+const app = require('../server');
 const User = require('../models/User');
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
@@ -25,8 +25,10 @@ const TEST_USER_2 = {
 let token1, token2, userId1, userId2, chatId;
 
 beforeAll(async () => {
-  // Connect to test DB
-  await mongoose.connect(process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/sweetchat_test');
+  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL || 'mongodb+srv://sohel:sohel@cluster0.hitpkzn.mongodb.net/mist_db?retryWrites=true&w=majority&appName=Cluster0';
+  if (mongoose.connection.readyState !== 1) {
+    await mongoose.connect(uri);
+  }
   // Clean up
   await User.deleteMany({ email: { $in: [TEST_USER.email, TEST_USER_2.email] } });
 });

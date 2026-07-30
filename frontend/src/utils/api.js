@@ -30,7 +30,10 @@ api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const isAuthRoute = original?.url?.includes('/auth/login') || 
+                        original?.url?.includes('/auth/signup') || 
+                        original?.url?.includes('/auth/forgot-password');
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
       original._retry = true;
       try {
         const { refreshToken } = getAuth();
